@@ -18,9 +18,12 @@ def main():
 
     running = True
     while running:
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
                 running = False
+
+        game.handle_events(events)
 
         screen.fill(BLACK)
 
