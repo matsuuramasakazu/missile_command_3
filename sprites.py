@@ -90,3 +90,38 @@ class PlayerMissile(pygame.sprite.Sprite):
         # Check if the missile has reached or passed the target
         if self.current_pos.distance_to(self.target_pos) < self.speed:
             self.kill()
+
+class EnemyMeteor(pygame.sprite.Sprite):
+    """Represents an enemy meteor falling from the sky."""
+    def __init__(self, start_pos, target_pos, speed=2):
+        """
+        Initializes an EnemyMeteor sprite.
+
+        Args:
+            start_pos (tuple[int, int]): The starting (x, y) coordinates.
+            target_pos (tuple[int, int]): The target (x, y) coordinates on the ground.
+            speed (int): The speed of the meteor.
+        """
+        super().__init__()
+        self.image = pygame.Surface([10, 10])
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect(center=start_pos)
+
+        self.start_pos = start_pos
+        self.target_pos = target_pos
+        self.speed = speed
+
+        self.current_pos = pygame.Vector2(start_pos)
+
+        angle = math.atan2(target_pos[1] - start_pos[1], target_pos[0] - start_pos[0])
+        self.velocity = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.speed
+
+    def update(self):
+        """Move the meteor and check for arrival."""
+        self.current_pos += self.velocity
+        self.rect.center = self.current_pos
+
+        # If the meteor goes off screen or reaches its target, remove it
+        if self.current_pos.y > self.target_pos[1] or \
+           not pygame.display.get_surface().get_rect().colliderect(self.rect):
+            self.kill()
