@@ -120,23 +120,29 @@ def test_explosion_destroys_meteor(game_instance):
     assert not meteor.alive()
 
 
-def test_explosion_destroys_city_and_base(game_instance):
-    """
-    爆発が都市と基地を正しく破壊することを確認するテスト。
-    """
-    # 都市と基地を取得
+@pytest.fixture
+def game_with_city(game_instance):
     city = list(game_instance.cities)[0]
+    return game_instance, city
+
+@pytest.fixture
+def game_with_base(game_instance):
     base = list(game_instance.bases)[0]
+    return game_instance, base
+
+def test_explosion_destroys_city(game_with_city):
+    """
+    爆発が都市を正しく破壊することを確認するテスト。
+    """
+    game_instance, city = game_with_city
 
     # 最初の状態を確認
     assert city in game_instance.cities
-    assert base in game_instance.bases
-    assert base.alive
 
     # 都市の位置に爆発を生成
-    explosion_on_city = Explosion(pos=city.rect.center, max_radius=50)
-    game_instance.explosions.add(explosion_on_city)
-    game_instance.all_sprites.add(explosion_on_city)
+    explosion = Explosion(pos=city.rect.center, max_radius=50)
+    game_instance.explosions.add(explosion)
+    game_instance.all_sprites.add(explosion)
 
     # 衝突判定を実行
     game_instance.update()
@@ -145,10 +151,20 @@ def test_explosion_destroys_city_and_base(game_instance):
     assert city not in game_instance.cities
     assert not city.alive()
 
+def test_explosion_destroys_base(game_with_base):
+    """
+    爆発が基地を正しく破壊することを確認するテスト。
+    """
+    game_instance, base = game_with_base
+
+    # 最初の状態を確認
+    assert base in game_instance.bases
+    assert base.alive
+
     # 基地の位置に爆発を生成
-    explosion_on_base = Explosion(pos=base.rect.center, max_radius=50)
-    game_instance.explosions.add(explosion_on_base)
-    game_instance.all_sprites.add(explosion_on_base)
+    explosion = Explosion(pos=base.rect.center, max_radius=50)
+    game_instance.explosions.add(explosion)
+    game_instance.all_sprites.add(explosion)
 
     # 衝突判定を実行
     game_instance.update()

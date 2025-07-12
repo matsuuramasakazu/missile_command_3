@@ -165,4 +165,3 @@ class Explosion(pygame.sprite.Sprite):
         self.image.fill((0, 0, 0, 0))  # Clear the surface
         pygame.draw.circle(self.image, WHITE, (self.max_radius, self.max_radius), self.current_radius)
         self.rect = self.image.get_rect(center=self.pos)
-        self.rect = self.image.get_rect(center=self.pos)

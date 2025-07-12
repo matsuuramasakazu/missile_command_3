@@ -43,7 +43,7 @@ class Game:
             start_pos = (start_x, 0) # Meteors start at the top of the screen
 
             # Choose a random target (city or base)
-            all_targets = list(self.cities) + list(self.bases)
+            all_targets = list(self.cities) + [b for b in self.bases if not b.is_destroyed()]
             if not all_targets:
                 return # No targets left
 
