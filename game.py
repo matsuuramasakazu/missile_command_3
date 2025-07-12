@@ -4,7 +4,7 @@ Game class for Missile Command.
 import pygame
 import math
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
-from sprites import City, MissileBase, PlayerMissile, EnemyMeteor
+from sprites import City, MissileBase, PlayerMissile, EnemyMeteor, Explosion
 import random
 
 class Game:
@@ -17,6 +17,7 @@ class Game:
         self.bases = pygame.sprite.Group()
         self.player_missiles = pygame.sprite.Group()
         self.enemy_meteors = pygame.sprite.Group() # New sprite group for meteors
+        self.explosions = pygame.sprite.Group()
         self.level = 0 # Current game level
         self.meteors_to_spawn_this_level = 0
         self.meteors_spawned_this_level = 0
@@ -110,6 +111,33 @@ class Game:
             self.meteor_spawn_timer = 0
 
         self.all_sprites.update()
+
+        for missile in self.player_missiles:
+            if missile.is_at_target():
+                explosion = Explosion(missile.target_pos)
+                self.all_sprites.add(explosion)
+                self.explosions.add(explosion)
+                missile.kill()
+
+        for meteor in self.enemy_meteors:
+            if meteor.has_reached_target():
+                explosion = Explosion(meteor.rect.center, max_radius=30) # Smaller explosion for meteor impact
+                self.all_sprites.add(explosion)
+                self.explosions.add(explosion)
+                meteor.kill()
+
+        # Check for collisions between explosions and meteors
+        for explosion in self.explosions:
+            pygame.sprite.spritecollide(explosion, self.enemy_meteors, True, pygame.sprite.collide_circle)
+
+        # Check for collisions with cities and bases
+        pygame.sprite.groupcollide(self.explosions, self.cities, False, True, pygame.sprite.collide_circle)
+        collided_bases = pygame.sprite.groupcollide(self.explosions, self.bases, False, False, pygame.sprite.collide_circle)
+        for explosion, bases in collided_bases.items():
+            for base in bases:
+                if base.alive:
+                    base.alive = False
+                    base.image.fill((80, 80, 80)) # Change color to show destruction
 
     def draw(self):
         """Draw all sprites to the screen."""

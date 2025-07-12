@@ -1,12 +1,13 @@
 import pygame
 import pytest
 from game import Game
-from sprites import MissileBase, PlayerMissile
+from sprites import MissileBase, PlayerMissile, EnemyMeteor, Explosion
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 
 # Pygameの初期化をモックまたはスキップ
 pygame.init = lambda: None
 pygame.display.set_mode = lambda size: pygame.Surface(size)
+pygame.display.get_surface = lambda: pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.sprite.Group = pygame.sprite.Group # 実際のGroupを使用
 
 @pytest.fixture
@@ -78,3 +79,82 @@ def test_fire_missile_from_closest_base(game_instance):
     # 再度クリックしてもミサイルが発射されないことを確認
     game_instance.handle_events([mouse_event])
     assert len(game_instance.player_missiles) == 1 # ミサイルの数は増えていない
+
+
+def test_explosion_destroys_meteor(game_instance):
+    """
+    爆発が隕石を正しく破壊することを確認するテスト。
+    """
+    # 隕石を作成
+    meteor = EnemyMeteor(start_pos=(300, 0), target_pos=(300, SCREEN_HEIGHT), speed=1)
+    game_instance.enemy_meteors.add(meteor)
+    game_instance.all_sprites.add(meteor)
+
+    # 隕石を迎撃するためのミサイルを発射
+    missile = PlayerMissile(start_pos=(0, 0), target_pos=(300, 50)) # 隕石の進路上に爆発を生成
+    game_instance.player_missiles.add(missile)
+    game_instance.all_sprites.add(missile)
+
+    # ミサイルがターゲットに到達するまでゲームを更新
+    while not missile.is_at_target():
+        missile.update()
+
+    # 最初の状態を確認
+    assert meteor in game_instance.enemy_meteors
+    assert missile in game_instance.player_missiles
+
+    # 衝突判定と爆発の生成を実行
+    game_instance.update()
+
+    # ミサイルが消え、爆発が生成されたことを確認
+    assert missile not in game_instance.player_missiles
+    assert len(game_instance.explosions) == 1
+
+    # 爆発が隕石を破壊するまでゲームを更新
+    # 爆発は拡大するので、数フレーム更新して衝突を確実にする
+    for _ in range(25):
+        game_instance.update()
+
+    # 隕石が破壊されたことを確認
+    assert meteor not in game_instance.enemy_meteors
+    assert not meteor.alive()
+
+
+def test_explosion_destroys_city_and_base(game_instance):
+    """
+    爆発が都市と基地を正しく破壊することを確認するテスト。
+    """
+    # 都市と基地を取得
+    city = list(game_instance.cities)[0]
+    base = list(game_instance.bases)[0]
+
+    # 最初の状態を確認
+    assert city in game_instance.cities
+    assert base in game_instance.bases
+    assert base.alive
+
+    # 都市の位置に爆発を生成
+    explosion_on_city = Explosion(pos=city.rect.center, max_radius=50)
+    game_instance.explosions.add(explosion_on_city)
+    game_instance.all_sprites.add(explosion_on_city)
+
+    # 衝突判定を実行
+    game_instance.update()
+
+    # 都市が破壊されたことを確認
+    assert city not in game_instance.cities
+    assert not city.alive()
+
+    # 基地の位置に爆発を生成
+    explosion_on_base = Explosion(pos=base.rect.center, max_radius=50)
+    game_instance.explosions.add(explosion_on_base)
+    game_instance.all_sprites.add(explosion_on_base)
+
+    # 衝突判定を実行
+    game_instance.update()
+
+    # 基地が破壊されたことを確認
+    assert not base.alive
+    # 基地は破壊されてもリストに残るが、aliveフラグがFalseになる
+    assert base in game_instance.bases
+    assert not list(game_instance.bases)[0].alive
