@@ -1,7 +1,7 @@
 
 import pygame
 import pytest
-from sprites import MissileBase, PlayerMissile
+from sprites import MissileBase, PlayerMissile, Explosion
 
 def test_missile_base_ammo_consumption():
     """Test that MissileBase consumes ammo correctly."""
@@ -60,5 +60,34 @@ def test_player_missile_movement():
     # The missile should be killed (removed from groups) when it reaches the target
     # We can check this by calling `alive()` on the sprite
     assert not missile.alive()
+
+    pygame.quit()
+
+def test_explosion_expansion_and_lifespan():
+    """Test that Explosion expands and eventually dies."""
+    pygame.init()
+
+    explosion = Explosion(pos=(300, 300), max_radius=50, expand_speed=5, lifespan=10)
+    sprites = pygame.sprite.Group(explosion)
+
+    # Initial state
+    assert explosion.current_radius == 0
+    assert explosion.lifespan == 10
+    assert explosion.alive()
+
+    # Update a few times to see expansion
+    for _ in range(5):
+        sprites.update()
+    
+    assert explosion.current_radius == 25
+    assert explosion.lifespan == 5
+    assert explosion.alive()
+
+    # Update until it should be gone
+    for _ in range(5):
+        sprites.update()
+
+    assert explosion.lifespan == 0
+    assert not explosion.alive()
 
     pygame.quit()
