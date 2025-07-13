@@ -1,10 +1,12 @@
 """
 Main file for Missile Command game.
 """
+
 import pygame
 import sys
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, FPS
 from game import Game
+
 
 def main():
     """Main game loop."""
@@ -36,6 +38,7 @@ def main():
 
     pygame.quit()
     sys.exit()
+
 
 if __name__ == "__main__":
     main()

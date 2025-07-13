@@ -1,14 +1,15 @@
 import pygame
 import pytest
 from game import Game
-from sprites import MissileBase, PlayerMissile, EnemyMeteor, Explosion
+from sprites import PlayerMissile, EnemyMeteor, Explosion
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 
 # Pygameの初期化をモックまたはスキップ
 pygame.init = lambda: None
 pygame.display.set_mode = lambda size: pygame.Surface(size)
 pygame.display.get_surface = lambda: pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.sprite.Group = pygame.sprite.Group # 実際のGroupを使用
+pygame.sprite.Group = pygame.sprite.Group  # 実際のGroupを使用
+
 
 @pytest.fixture
 def game_instance():
@@ -16,12 +17,13 @@ def game_instance():
     game = Game(screen)
     return game
 
+
 def test_find_closest_base(game_instance):
     # 基地の初期位置を確認 (settings.pyに依存)
     # game_instance._setup_initial_sprites() で設定される
-    base1 = list(game_instance.bases)[0] # 左端の基地
-    base2 = list(game_instance.bases)[1] # 中央の基地
-    base3 = list(game_instance.bases)[2] # 右端の基地
+    base1 = list(game_instance.bases)[0]  # 左端の基地
+    base2 = list(game_instance.bases)[1]  # 中央の基地
+    base3 = list(game_instance.bases)[2]  # 右端の基地
 
     # クリック位置が中央の基地に近い場合
     target_pos_center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
@@ -38,20 +40,23 @@ def test_find_closest_base(game_instance):
     closest = game_instance._find_closest_base(target_pos_right)
     assert closest == base3
 
+
 def test_fire_missile_from_closest_base(game_instance):
     # 初期状態ではミサイルがないことを確認
     assert len(game_instance.player_missiles) == 0
 
     # 中央の基地に近い位置をクリック
     target_pos = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-    
+
     # Pygameイベントをシミュレート
-    mouse_event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {'button': 1, 'pos': target_pos})
+    mouse_event = pygame.event.Event(
+        pygame.MOUSEBUTTONDOWN, {"button": 1, "pos": target_pos}
+    )
     game_instance.handle_events([mouse_event])
 
     # ミサイルが1つ発射されたことを確認
     assert len(game_instance.player_missiles) == 1
-    
+
     # 発射されたミサイルがPlayerMissileのインスタンスであることを確認
     missile = list(game_instance.player_missiles)[0]
     assert isinstance(missile, PlayerMissile)
@@ -60,25 +65,25 @@ def test_fire_missile_from_closest_base(game_instance):
     closest_base = game_instance._find_closest_base(target_pos)
     # 発射元の基地の座標とミサイルの開始座標が一致することを確認
     assert missile.start_pos == closest_base.rect.midtop
-    assert closest_base.ammo == 9 # 弾薬が1減っていることを確認
+    assert closest_base.ammo == 9  # 弾薬が1減っていることを確認
 
     # 弾薬がない基地からは発射されないことを確認
     # 全ての弾薬を消費させる
     for base in game_instance.bases:
         base.ammo = 0
-    
+
     # 再度クリックしてもミサイルが発射されないことを確認
     game_instance.handle_events([mouse_event])
-    assert len(game_instance.player_missiles) == 1 # ミサイルの数は増えていない
+    assert len(game_instance.player_missiles) == 1  # ミサイルの数は増えていない
 
     # 破壊された基地からは発射されないことを確認
     # 全ての基地を破壊する
     for base in game_instance.bases:
         base.alive = False
-    
+
     # 再度クリックしてもミサイルが発射されないことを確認
     game_instance.handle_events([mouse_event])
-    assert len(game_instance.player_missiles) == 1 # ミサイルの数は増えていない
+    assert len(game_instance.player_missiles) == 1  # ミサイルの数は増えていない
 
 
 def test_explosion_destroys_meteor(game_instance):
@@ -91,7 +96,9 @@ def test_explosion_destroys_meteor(game_instance):
     game_instance.all_sprites.add(meteor)
 
     # 隕石を迎撃するためのミサイルを発射
-    missile = PlayerMissile(start_pos=(0, 0), target_pos=(300, 50)) # 隕石の進路上に爆発を生成
+    missile = PlayerMissile(
+        start_pos=(0, 0), target_pos=(300, 50)
+    )  # 隕石の進路上に爆発を生成
     game_instance.player_missiles.add(missile)
     game_instance.all_sprites.add(missile)
 
@@ -125,10 +132,12 @@ def game_with_city(game_instance):
     city = list(game_instance.cities)[0]
     return game_instance, city
 
+
 @pytest.fixture
 def game_with_base(game_instance):
     base = list(game_instance.bases)[0]
     return game_instance, base
+
 
 def test_explosion_destroys_city(game_with_city):
     """
@@ -151,6 +160,7 @@ def test_explosion_destroys_city(game_with_city):
     assert city not in game_instance.cities
     assert not city.alive()
 
+
 def test_explosion_destroys_base(game_with_base):
     """
     爆発が基地を正しく破壊することを確認するテスト。
@@ -159,7 +169,7 @@ def test_explosion_destroys_base(game_with_base):
 
     # 最初の状態を確認
     assert base in game_instance.bases
-    assert base.alive
+    assert base.is_alive
 
     # 基地の位置に爆発を生成
     explosion = Explosion(pos=base.rect.center, max_radius=50)
@@ -170,7 +180,7 @@ def test_explosion_destroys_base(game_with_base):
     game_instance.update()
 
     # 基地が破壊されたことを確認
-    assert not base.alive
+    assert not base.is_alive
     # 基地は破壊されてもリストに残るが、aliveフラグがFalseになる
     assert base in game_instance.bases
-    assert not list(game_instance.bases)[0].alive
+    assert not list(game_instance.bases)[0].is_alive
