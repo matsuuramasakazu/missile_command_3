@@ -12,3 +12,8 @@ FPS = 60
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+
+# Scoring
+SCORE_PER_METEOR = 25
+BONUS_PER_CITY = 100
+BONUS_PER_AMMO = 5

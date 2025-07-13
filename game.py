@@ -4,7 +4,14 @@ Game class for Missile Command.
 
 import pygame
 import math
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE
+from settings import (
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    WHITE,
+    SCORE_PER_METEOR,
+    BONUS_PER_CITY,
+    BONUS_PER_AMMO,
+)
 from sprites import City, MissileBase, EnemyMeteor, Explosion
 import random
 
@@ -152,7 +159,7 @@ class Game:
                 explosion, self.enemy_meteors, True, pygame.sprite.collide_circle
             )
             if destroyed_meteors:
-                self.score += 25 * len(destroyed_meteors)
+                self.score += SCORE_PER_METEOR * len(destroyed_meteors)
 
         pygame.sprite.groupcollide(
             self.explosions, self.cities, False, True, pygame.sprite.collide_circle
@@ -171,10 +178,10 @@ class Game:
             and not self.enemy_meteors
         ):
             for city in self.cities:
-                self.score += 100
+                self.score += BONUS_PER_CITY
             for base in self.bases:
                 if not base.is_destroyed():
-                    self.score += 5 * base.ammo
+                    self.score += BONUS_PER_AMMO * base.ammo
 
             self._start_new_level()
 
