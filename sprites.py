@@ -1,13 +1,16 @@
 """
 Sprite classes for Missile Command.
 """
+
 import math
 import pygame
 from settings import WHITE
 
+
 class City(pygame.sprite.Sprite):
     """Represents a city to be protected."""
-    def __init__(self, x, y, width=50, height=30):
+
+    def __init__(self, x, y, width=50, height=30, *groups):
         """
         Initializes a City sprite.
 
@@ -17,16 +20,18 @@ class City(pygame.sprite.Sprite):
             width (int): The width of the city.
             height (int): The height of the city.
         """
-        super().__init__()
+        super().__init__(*groups)
         self.image = pygame.Surface([width, height])
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
 
+
 class MissileBase(pygame.sprite.Sprite):
     """Represents a missile base that fires missiles."""
-    def __init__(self, x, y, width=40, height=20, ammo=10):
+
+    def __init__(self, x, y, width=40, height=20, ammo=10, *groups):
         """
         Initializes a MissileBase sprite.
 
@@ -37,29 +42,31 @@ class MissileBase(pygame.sprite.Sprite):
             height (int): The height of the base.
             ammo (int): The initial number of missiles.
         """
-        super().__init__()
+        super().__init__(*groups)
         self.image = pygame.Surface([width, height])
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.ammo = ammo
-        self.alive = True
+        self.is_alive = True
 
     def is_destroyed(self):
         """Check if the base is destroyed."""
-        return not self.alive
+        return not self.is_alive
 
-    def fire_missile(self, target_pos):
+    def fire_missile(self, target_pos, *groups):
         """Fire a missile if ammo is available."""
-        if self.ammo > 0 and self.alive:
+        if self.ammo > 0 and self.is_alive:
             self.ammo -= 1
-            return PlayerMissile(self.rect.midtop, target_pos)
+            return PlayerMissile(self.rect.midtop, target_pos, 10, *groups)
         return None
+
 
 class PlayerMissile(pygame.sprite.Sprite):
     """Represents a missile fired by the player."""
-    def __init__(self, start_pos, target_pos, speed=10):
+
+    def __init__(self, start_pos, target_pos, speed=10, *groups):
         """
         Initializes a PlayerMissile sprite.
 
@@ -68,7 +75,7 @@ class PlayerMissile(pygame.sprite.Sprite):
             target_pos (tuple[int, int]): The target (x, y) coordinates.
             speed (int): The speed of the missile.
         """
-        super().__init__()
+        super().__init__(*groups)
         self.image = pygame.Surface([4, 4])
         self.image.fill(WHITE)
         self.rect = self.image.get_rect(center=start_pos)
@@ -78,31 +85,33 @@ class PlayerMissile(pygame.sprite.Sprite):
         self.speed = speed
 
         self.current_pos = pygame.Vector2(start_pos)
-        
+
         angle = math.atan2(target_pos[1] - start_pos[1], target_pos[0] - start_pos[0])
         self.velocity = pygame.Vector2(math.cos(angle), math.sin(angle)) * self.speed
 
     def update(self):
         """Move the missile."""
         self.current_pos += self.velocity
-        self.rect.center = self.current_pos
+        self.rect.center = (int(self.current_pos.x), int(self.current_pos.y))
 
     def is_at_target(self):
         """Check if the missile has reached its target."""
         return self.current_pos.distance_to(self.target_pos) < self.speed
 
+
 class EnemyMeteor(pygame.sprite.Sprite):
     """Represents an enemy meteor falling from the sky."""
-    def __init__(self, start_pos, target_pos, speed=2):
+
+    def __init__(self, start_pos, target_pos, speed=2.0, *groups):
         """
         Initializes an EnemyMeteor sprite.
 
         Args:
             start_pos (tuple[int, int]): The starting (x, y) coordinates.
             target_pos (tuple[int, int]): The target (x, y) coordinates on the ground.
-            speed (int): The speed of the meteor.
+            speed (float): The speed of the meteor.
         """
-        super().__init__()
+        super().__init__(*groups)
         self.image = pygame.Surface([10, 10])
         self.image.fill(WHITE)
         self.rect = self.image.get_rect(center=start_pos)
@@ -119,7 +128,7 @@ class EnemyMeteor(pygame.sprite.Sprite):
     def update(self):
         """Move the meteor."""
         self.current_pos += self.velocity
-        self.rect.center = self.current_pos
+        self.rect.center = (int(self.current_pos.x), int(self.current_pos.y))
 
         # Kill if it goes off-screen
         if not pygame.display.get_surface().get_rect().colliderect(self.rect):
@@ -129,9 +138,11 @@ class EnemyMeteor(pygame.sprite.Sprite):
         """Check if the meteor has reached or passed its target y-coordinate."""
         return self.current_pos.y >= self.target_pos[1]
 
+
 class Explosion(pygame.sprite.Sprite):
     """Represents an explosion."""
-    def __init__(self, pos, max_radius=50, expand_speed=2, lifespan=30):
+
+    def __init__(self, pos, max_radius=50, expand_speed=2, lifespan=30, *groups):
         """
         Initializes an Explosion sprite.
 
@@ -141,7 +152,7 @@ class Explosion(pygame.sprite.Sprite):
             expand_speed (int): The speed at which the explosion expands.
             lifespan (int): The duration of the explosion in frames.
         """
-        super().__init__()
+        super().__init__(*groups)
         self.pos = pos
         self.max_radius = max_radius
         self.current_radius = 0
@@ -149,7 +160,9 @@ class Explosion(pygame.sprite.Sprite):
         self.lifespan = lifespan
         self.radius = 0  # Add radius attribute for collision detection
 
-        self.image = pygame.Surface([self.max_radius * 2, self.max_radius * 2], pygame.SRCALPHA)
+        self.image = pygame.Surface(
+            [self.max_radius * 2, self.max_radius * 2], pygame.SRCALPHA
+        )
         self.rect = self.image.get_rect(center=self.pos)
 
     def update(self):
@@ -163,5 +176,7 @@ class Explosion(pygame.sprite.Sprite):
             return
 
         self.image.fill((0, 0, 0, 0))  # Clear the surface
-        pygame.draw.circle(self.image, WHITE, (self.max_radius, self.max_radius), self.current_radius)
+        pygame.draw.circle(
+            self.image, WHITE, (self.max_radius, self.max_radius), self.current_radius
+        )
         self.rect = self.image.get_rect(center=self.pos)
