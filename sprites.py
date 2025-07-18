@@ -55,6 +55,12 @@ class MissileBase(pygame.sprite.Sprite):
         """Check if the base is destroyed."""
         return not self.is_alive
 
+    def destroy(self):
+        """Destroys the base."""
+        if self.is_alive:
+            self.is_alive = False
+            self.image.fill((80, 80, 80))
+
     def fire_missile(self, target_pos, *groups):
         """Fire a missile if ammo is available."""
         if self.ammo > 0 and self.is_alive:
@@ -94,6 +100,9 @@ class PlayerMissile(pygame.sprite.Sprite):
         self.current_pos += self.velocity
         self.rect.center = (int(self.current_pos.x), int(self.current_pos.y))
 
+        if not pygame.display.get_surface().get_rect().colliderect(self.rect):
+            self.kill()
+
     def is_at_target(self):
         """Check if the missile has reached its target."""
         return self.current_pos.distance_to(self.target_pos) < self.speed
@@ -130,7 +139,6 @@ class EnemyMeteor(pygame.sprite.Sprite):
         self.current_pos += self.velocity
         self.rect.center = (int(self.current_pos.x), int(self.current_pos.y))
 
-        # Kill if it goes off-screen
         if not pygame.display.get_surface().get_rect().colliderect(self.rect):
             self.kill()
 

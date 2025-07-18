@@ -78,26 +78,22 @@ class Game:
         """Create initial cities and missile bases."""
         ground_level = SCREEN_HEIGHT - 50
 
+        # Setup missile bases
         base_positions = [100, SCREEN_WIDTH // 2, SCREEN_WIDTH - 100]
-        for i, pos in enumerate(base_positions):
-            MissileBase(
-                pos - 20, ground_level, 40, 20, 10, self.all_sprites, self.bases
-            )
+        for pos in base_positions:
+            MissileBase(pos - 20, ground_level, 40, 20, 10, self.all_sprites, self.bases)
 
-        city_group_1 = (
-            [p + 50 for p in base_positions[:1]]
-            + [p + 110 for p in base_positions[:1]]
-            + [p + 170 for p in base_positions[:1]]
-        )
-        city_group_2 = (
-            [p - 50 for p in base_positions[2:]]
-            + [p - 110 for p in base_positions[2:]]
-            + [p - 170 for p in base_positions[2:]]
-        )
-        city_positions = city_group_1 + city_group_2
+        # Setup cities
+        city_positions = []
+        # Cities to the right of the left base
+        for i in range(3):
+            city_positions.append(base_positions[0] + 50 + i * 60)
+        # Cities to the left of the right base
+        for i in range(3):
+            city_positions.append(base_positions[2] - 90 - i * 60)
 
         for pos in city_positions:
-            City(pos - 25, ground_level + 5, 50, 30, self.all_sprites, self.cities)
+            City(pos, ground_level + 5, 50, 30, self.all_sprites, self.cities)
 
     def handle_events(self, events):
         """Handle all game events."""
@@ -169,9 +165,7 @@ class Game:
         )
         for _, bases in collided_bases.items():
             for base in bases:
-                if base.is_alive:
-                    base.is_alive = False
-                    base.image.fill((80, 80, 80))
+                base.destroy()
 
         if (
             self.meteors_spawned_this_level == self.meteors_to_spawn_this_level
@@ -205,14 +199,30 @@ class Game:
                 )
                 self.screen.blit(ammo_text, ammo_pos)
 
+    def _draw_game_over_screen(self):
+        """Draws the game over screen."""
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.screen.blit(overlay, (0, 0))
+
+        game_over_text = self.font.render("GAME OVER", True, WHITE)
+        text_rect = game_over_text.get_rect(
+            center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 40)
+        )
+        self.screen.blit(game_over_text, text_rect)
+
+        final_score_text = self.font.render(
+            f"Final Score: {self.score}", True, WHITE
+        )
+        score_rect = final_score_text.get_rect(
+            center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 10)
+        )
+        self.screen.blit(final_score_text, score_rect)
+
     def draw(self):
         """Draw all sprites to the screen."""
         self.all_sprites.draw(self.screen)
         self._draw_ui()
 
         if self.game_over:
-            game_over_text = self.font.render("GAME OVER", True, WHITE)
-            text_rect = game_over_text.get_rect(
-                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-            )
-            self.screen.blit(game_over_text, text_rect)
+            self._draw_game_over_screen()
