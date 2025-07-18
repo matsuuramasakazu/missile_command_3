@@ -81,7 +81,9 @@ class Game:
         # Setup missile bases
         base_positions = [100, SCREEN_WIDTH // 2, SCREEN_WIDTH - 100]
         for pos in base_positions:
-            MissileBase(pos - 20, ground_level, 40, 20, 10, self.all_sprites, self.bases)
+            MissileBase(
+                pos - 20, ground_level, 40, 20, 10, self.all_sprites, self.bases
+            )
 
         # Setup cities
         city_positions = []
@@ -211,9 +213,7 @@ class Game:
         )
         self.screen.blit(game_over_text, text_rect)
 
-        final_score_text = self.font.render(
-            f"Final Score: {self.score}", True, WHITE
-        )
+        final_score_text = self.font.render(f"Final Score: {self.score}", True, WHITE)
         score_rect = final_score_text.get_rect(
             center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 10)
         )
